@@ -15,11 +15,18 @@ class Runner
 
     return true if @build.canceled?
 
-    if @project.no_running_builds?
-      run
-    else
-      run_later
-    end
+    @semaphore.synchronize {
+      if @project.no_running_builds?
+        run_now
+      else
+        run_later
+      end
+    }
+    run if @build.running?
+  end
+
+  def run_now
+    build.run!
   end
 
   def run_later
@@ -29,6 +36,7 @@ class Runner
   def initialize
     @logger = Logger.new(STDOUT)
     @logger.level = Logger::INFO
+    @semaphore = Mutex.new
   end
 
   def run
@@ -36,8 +44,6 @@ class Runner
     commands = project.scripts
     commands = commands.lines.to_a
     commands.unshift(prepare_project_cmd(path, build.sha))
-
-    build.run!
 
     Dir.chdir(path) do
       commands.each do |line|

@@ -129,11 +129,8 @@ class Project < ActiveRecord::Base
   end
 
   def no_running_builds?
-    # Perform this query uncached to always get the latest results
-    uncached {
-      # Get running builds not later than 3 days ago to ignore hungs
-      builds.running.where("updated_at > ?", 3.days.ago).empty?
-    }
+    # Get running builds not later than 3 days ago to ignore hungs
+    builds.running.where("updated_at > ?", 3.days.ago).empty?
   end
 end
 
